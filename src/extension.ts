@@ -1,57 +1,12 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { MCPServer } from './server';
+import { listWorkspaceFiles } from './tools/file-tools';
 
 // Re-export for testing purposes
 export { MCPServer };
 
 let mcpServer: MCPServer | undefined;
 let statusBarItem: vscode.StatusBarItem | undefined;
-
-// Function to list files in workspace
-async function listWorkspaceFiles(workspacePath: string, recursive: boolean = false): Promise<Array<{path: string, type: 'file' | 'directory'}>> {
-    console.log(`[listWorkspaceFiles] Starting with path: ${workspacePath}, recursive: ${recursive}`);
-    
-    if (!vscode.workspace.workspaceFolders) {
-        throw new Error('No workspace folder is open');
-    }
-
-    const workspaceFolder = vscode.workspace.workspaceFolders[0];
-    const workspaceUri = workspaceFolder.uri;
-    
-    // Create URI for the target directory
-    const targetUri = vscode.Uri.joinPath(workspaceUri, workspacePath);
-    console.log(`[listWorkspaceFiles] Target URI: ${targetUri.fsPath}`);
-
-    async function processDirectory(dirUri: vscode.Uri, currentPath: string = ''): Promise<Array<{path: string, type: 'file' | 'directory'}>> {
-        const entries = await vscode.workspace.fs.readDirectory(dirUri);
-        const result: Array<{path: string, type: 'file' | 'directory'}> = [];
-
-        for (const [name, type] of entries) {
-            const entryPath = currentPath ? path.join(currentPath, name) : name;
-            const itemType: 'file' | 'directory' = (type & vscode.FileType.Directory) ? 'directory' : 'file';
-            
-            result.push({ path: entryPath, type: itemType });
-
-            if (recursive && itemType === 'directory') {
-                const subDirUri = vscode.Uri.joinPath(dirUri, name);
-                const subEntries = await processDirectory(subDirUri, entryPath);
-                result.push(...subEntries);
-            }
-        }
-
-        return result;
-    }
-
-    try {
-        const result = await processDirectory(targetUri);
-        console.log(`[listWorkspaceFiles] Found ${result.length} entries`);
-        return result;
-    } catch (error) {
-        console.error('[listWorkspaceFiles] Error:', error);
-        throw error;
-    }
-}
 
 // Function to update status bar
 function updateStatusBar(port: number) {
@@ -86,6 +41,9 @@ export async function activate(context: vscode.ExtensionContext) {
                 throw error;
             }
         });
+        
+        // Call setupTools after setting the callback
+        mcpServer.setupTools();
 
         await mcpServer.start();
         console.log('MCP Server started successfully');

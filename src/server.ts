@@ -1,10 +1,9 @@
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { z } from 'zod';
-import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { Server } from 'http';
 import { Request, Response } from 'express';
+import { registerFileTools, FileListingCallback } from './tools/file-tools';
 
 export class MCPServer {
     private server: McpServer;
@@ -12,9 +11,9 @@ export class MCPServer {
     private app: express.Application;
     private httpServer?: Server;
     private port: number;
-    private fileListingCallback?: (path: string, recursive: boolean) => Promise<Array<{path: string, type: 'file' | 'directory'}>>;
+    private fileListingCallback?: FileListingCallback;
 
-    public setFileListingCallback(callback: (path: string, recursive: boolean) => Promise<Array<{path: string, type: 'file' | 'directory'}>>) {
+    public setFileListingCallback(callback: FileListingCallback) {
         this.fileListingCallback = callback;
     }
 
@@ -41,49 +40,19 @@ export class MCPServer {
             sessionIdGenerator: undefined,
         });
 
-        this.setupTools();
+        // Note: setupTools() is no longer called here
         this.setupRoutes();
         this.setupEventHandlers();
     }
 
-    private setupTools(): void {
-        // Add list_files tool
-        this.server.tool(
-            'list_files',
-            'Lists files and directories in the VS Code workspace',
-            {
-                path: z.string().describe('The path to list files from'),
-                recursive: z.boolean().optional().describe('Whether to list files recursively')
-            },
-            async ({ path, recursive = false }): Promise<CallToolResult> => {
-                console.log(`[list_files] Tool called with path=${path}, recursive=${recursive}`);
-                
-                if (!this.fileListingCallback) {
-                    console.error('[list_files] File listing callback not set');
-                    throw new Error('File listing callback not set');
-                }
-
-                try {
-                    console.log('[list_files] Calling file listing callback');
-                    const files = await this.fileListingCallback(path, recursive);
-                    console.log(`[list_files] Callback returned ${files.length} items`);
-                    
-                    const result: CallToolResult = {
-                        content: [
-                            {
-                                type: 'text',
-                                text: JSON.stringify(files, null, 2)
-                            }
-                        ]
-                    };
-                    console.log('[list_files] Successfully completed');
-                    return result;
-                } catch (error) {
-                    console.error('[list_files] Error in tool:', error);
-                    throw error;
-                }
-            }
-        );
+    public setupTools(): void {
+        // Register tools from the tools module
+        if (this.fileListingCallback) {
+            registerFileTools(this.server, this.fileListingCallback);
+            console.log('MCP tools registered successfully');
+        } else {
+            console.warn('File listing callback not set during tools setup');
+        }
     }
 
     private setupRoutes(): void {
