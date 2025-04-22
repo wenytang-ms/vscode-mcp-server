@@ -2,7 +2,11 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { MCPServer } from './server';
 
+// Re-export for testing purposes
+export { MCPServer };
+
 let mcpServer: MCPServer | undefined;
+let statusBarItem: vscode.StatusBarItem | undefined;
 
 // Function to list files in workspace
 async function listWorkspaceFiles(workspacePath: string, recursive: boolean = false): Promise<Array<{path: string, type: 'file' | 'directory'}>> {
@@ -49,52 +53,104 @@ async function listWorkspaceFiles(workspacePath: string, recursive: boolean = fa
     }
 }
 
+// Function to update status bar
+function updateStatusBar(port: number) {
+    if (!statusBarItem) {
+        return;
+    }
+
+    statusBarItem.text = `$(server) MCP Server: ${port}`;
+    statusBarItem.tooltip = `MCP Server running at localhost:${port}`;
+    statusBarItem.show();
+}
+
 export async function activate(context: vscode.ExtensionContext) {
-	console.log('Activating vscode-mcp-server extension');
+    console.log('Activating vscode-mcp-server extension');
 
-	try {
-		// Initialize MCP server with workspace file listing capability
-		mcpServer = new MCPServer(3000);
+    try {
+        // Get configuration
+        const config = vscode.workspace.getConfiguration('vscode-mcp-server');
+        const port = config.get<number>('port') || 3000;
+        
+        console.log(`[activate] Using port ${port} from configuration`);
 
-		// Set up file listing callback
-		mcpServer.setFileListingCallback(async (path: string, recursive: boolean) => {
-			try {
-				return await listWorkspaceFiles(path, recursive);
-			} catch (error) {
-				console.error('Error listing files:', error);
-				throw error;
-			}
-		});
+        // Initialize MCP server with the configured port
+        mcpServer = new MCPServer(port);
 
-		await mcpServer.start();
-		console.log('MCP Server started successfully');
+        // Set up file listing callback
+        mcpServer.setFileListingCallback(async (path: string, recursive: boolean) => {
+            try {
+                return await listWorkspaceFiles(path, recursive);
+            } catch (error) {
+                console.error('Error listing files:', error);
+                throw error;
+            }
+        });
 
-		// Register a command that shows the MCP server status
-		const disposable = vscode.commands.registerCommand('vscode-mcp-server.status', () => {
-			vscode.window.showInformationMessage('MCP Server is running!');
-		});
+        await mcpServer.start();
+        console.log('MCP Server started successfully');
 
-		// Make sure the server is stopped when the extension is deactivated
-		context.subscriptions.push(
-			disposable,
-			{ dispose: async () => mcpServer && await mcpServer.stop() }
-		);
-	} catch (error) {
-		console.error('Failed to start MCP Server:', error);
-		vscode.window.showErrorMessage(`Failed to start MCP Server: ${error instanceof Error ? error.message : 'Unknown error'}`);
-	}
+        // Create status bar item
+        statusBarItem = vscode.window.createStatusBarItem(
+            vscode.StatusBarAlignment.Right,
+            100
+        );
+        statusBarItem.command = 'vscode-mcp-server.showServerInfo';
+        updateStatusBar(port);
+
+        // Register commands
+        const statusCommand = vscode.commands.registerCommand('vscode-mcp-server.status', () => {
+            vscode.window.showInformationMessage('MCP Server is running!');
+        });
+
+        const showServerInfoCommand = vscode.commands.registerCommand('vscode-mcp-server.showServerInfo', () => {
+            vscode.window.showInformationMessage(`MCP Server is running at http://localhost:${port}/mcp`);
+        });
+
+        // Listen for configuration changes
+        context.subscriptions.push(
+            vscode.workspace.onDidChangeConfiguration(e => {
+                if (e.affectsConfiguration('vscode-mcp-server.port')) {
+                    vscode.window.showInformationMessage(
+                        'MCP Server port configuration changed. Please reload the window to apply the changes.',
+                        'Reload'
+                    ).then(selection => {
+                        if (selection === 'Reload') {
+                            vscode.commands.executeCommand('workbench.action.reloadWindow');
+                        }
+                    });
+                }
+            })
+        );
+
+        // Add all disposables to the context subscriptions
+        context.subscriptions.push(
+            statusBarItem,
+            statusCommand,
+            showServerInfoCommand,
+            { dispose: async () => mcpServer && await mcpServer.stop() }
+        );
+    } catch (error) {
+        console.error('Failed to start MCP Server:', error);
+        vscode.window.showErrorMessage(`Failed to start MCP Server: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 }
 
 export async function deactivate() {
-	if (!mcpServer) return;
-	
-	try {
-		await mcpServer.stop();
-		console.log('MCP Server stopped successfully');
-	} catch (error) {
-		console.error('Error stopping MCP Server:', error);
-		throw error; // Re-throw to ensure VS Code knows about the failure
-	} finally {
-		mcpServer = undefined;
-	}
+    if (statusBarItem) {
+        statusBarItem.dispose();
+        statusBarItem = undefined;
+    }
+
+    if (!mcpServer) return;
+    
+    try {
+        await mcpServer.stop();
+        console.log('MCP Server stopped successfully');
+    } catch (error) {
+        console.error('Error stopping MCP Server:', error);
+        throw error; // Re-throw to ensure VS Code knows about the failure
+    } finally {
+        mcpServer = undefined;
+    }
 }
