@@ -10,6 +10,9 @@ export type FileListingResult = Array<{path: string, type: 'file' | 'directory'}
 // Type for the file listing callback function
 export type FileListingCallback = (path: string, recursive: boolean) => Promise<FileListingResult>;
 
+// Default maximum character count
+const DEFAULT_MAX_CHARACTERS = 100000;
+
 /**
  * Lists files and directories in the VS Code workspace
  * @param workspacePath The path within the workspace to list files from
@@ -61,6 +64,62 @@ export async function listWorkspaceFiles(workspacePath: string, recursive: boole
 }
 
 /**
+ * Reads a file from the VS Code workspace with character limit check
+ * @param workspacePath The path within the workspace to the file
+ * @param encoding Optional encoding to convert the file content to a string
+ * @param maxCharacters Maximum character count (default: 100,000)
+ * @returns File content as Uint8Array or string if encoding is provided
+ */
+export async function readWorkspaceFile(
+    workspacePath: string, 
+    encoding?: string | null, 
+    maxCharacters: number = DEFAULT_MAX_CHARACTERS
+): Promise<Uint8Array | string> {
+    console.log(`[readWorkspaceFile] Starting with path: ${workspacePath}, encoding: ${encoding || 'none'}, maxCharacters: ${maxCharacters}`);
+    
+    if (!vscode.workspace.workspaceFolders) {
+        throw new Error('No workspace folder is open');
+    }
+
+    const workspaceFolder = vscode.workspace.workspaceFolders[0];
+    const workspaceUri = workspaceFolder.uri;
+    
+    // Create URI for the target file
+    const fileUri = vscode.Uri.joinPath(workspaceUri, workspacePath);
+    console.log(`[readWorkspaceFile] File URI: ${fileUri.fsPath}`);
+
+    try {
+        // Read the file content as Uint8Array
+        const fileContent = await vscode.workspace.fs.readFile(fileUri);
+        console.log(`[readWorkspaceFile] File read successfully, size: ${fileContent.byteLength} bytes`);
+        
+        // If encoding is provided, convert to string and check character count
+        if (encoding) {
+            const textDecoder = new TextDecoder(encoding);
+            const textContent = textDecoder.decode(fileContent);
+            
+            // Check if the character count exceeds the limit
+            if (textContent.length > maxCharacters) {
+                throw new Error(`File content exceeds the maximum character limit (${textContent.length} vs ${maxCharacters} allowed)`);
+            }
+            
+            return textContent;
+        } else {
+            // For binary content, use byte length as approximation
+            if (fileContent.byteLength > maxCharacters) {
+                throw new Error(`File content exceeds the maximum character limit (approx. ${fileContent.byteLength} bytes vs ${maxCharacters} allowed)`);
+            }
+            
+            // Otherwise return the raw bytes
+            return fileContent;
+        }
+    } catch (error) {
+        console.error('[readWorkspaceFile] Error:', error);
+        throw error;
+    }
+}
+
+/**
  * Registers MCP file-related tools with the server
  * @param server MCP server instance
  * @param fileListingCallback Callback function for file listing operations
@@ -75,7 +134,7 @@ export function registerFileTools(
         'Lists files and directories in the VS Code workspace',
         {
             path: z.string().describe('The path to list files from'),
-            recursive: z.boolean().optional().describe('Whether to list files recursively')
+            recursive: z.boolean().optional().default(false).describe('Whether to list files recursively')
         },
         async ({ path, recursive = false }): Promise<CallToolResult> => {
             console.log(`[list_files] Tool called with path=${path}, recursive=${recursive}`);
@@ -102,6 +161,51 @@ export function registerFileTools(
                 return result;
             } catch (error) {
                 console.error('[list_files] Error in tool:', error);
+                throw error;
+            }
+        }
+    );
+
+    // Add read_file tool with proper nullable and default values
+    server.tool(
+        'read_file',
+        'Reads a file from the VS Code workspace (max: 100,000 characters)',
+        {
+            path: z.string().describe('The path to the file to read'),
+            encoding: z.string().optional().default('utf-8').describe('Optional encoding to convert the file content to a string'),
+            maxCharacters: z.number().optional().default(DEFAULT_MAX_CHARACTERS).describe('Maximum character count (default: 100,000)')
+        },
+        async ({ path, encoding = null, maxCharacters = DEFAULT_MAX_CHARACTERS }): Promise<CallToolResult> => {
+            console.log(`[read_file] Tool called with path=${path}, encoding=${encoding || 'none'}, maxCharacters=${maxCharacters}`);
+            
+            try {
+                console.log('[read_file] Reading file');
+                const content = await readWorkspaceFile(path, encoding, maxCharacters);
+                
+                let resultContent: string;
+                if (content instanceof Uint8Array) {
+                    // For binary data, convert to base64
+                    const base64 = Buffer.from(content).toString('base64');
+                    resultContent = `Binary file, base64 encoded: ${base64}`;
+                    console.log(`[read_file] File read as binary, base64 length: ${base64.length}`);
+                } else {
+                    // For text data, return as is
+                    resultContent = content;
+                    console.log(`[read_file] File read as text, length: ${content.length} characters`);
+                }
+                
+                const result: CallToolResult = {
+                    content: [
+                        {
+                            type: 'text',
+                            text: resultContent
+                        }
+                    ]
+                };
+                console.log('[read_file] Successfully completed');
+                return result;
+            } catch (error) {
+                console.error('[read_file] Error in tool:', error);
                 throw error;
             }
         }
