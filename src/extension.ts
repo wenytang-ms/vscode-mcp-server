@@ -9,17 +9,28 @@ let mcpServer: MCPServer | undefined;
 let statusBarItem: vscode.StatusBarItem | undefined;
 let sharedTerminal: vscode.Terminal | undefined;
 
+// Terminal name constant
+const TERMINAL_NAME = 'MCP Shell Commands';
+
 /**
  * Gets or creates the shared terminal for the extension
  * @param context The extension context
  * @returns The shared terminal instance
  */
 export function getExtensionTerminal(context: vscode.ExtensionContext): vscode.Terminal {
-    if (!sharedTerminal || sharedTerminal.exitStatus !== undefined) {
-        // Create a new terminal if it doesn't exist or if it has exited
-        sharedTerminal = vscode.window.createTerminal('MCP Shell Commands');
-        console.log('[getExtensionTerminal] Created new terminal for shell commands');
+    // Check if a terminal with our name already exists
+    const existingTerminal = vscode.window.terminals.find(t => t.name === TERMINAL_NAME);
+    
+    if (existingTerminal && existingTerminal.exitStatus === undefined) {
+        // Reuse the existing terminal if it's still open
+        console.log('[getExtensionTerminal] Reusing existing terminal for shell commands');
+        return existingTerminal;
     }
+    
+    // Create a new terminal if it doesn't exist or if it has exited
+    sharedTerminal = vscode.window.createTerminal(TERMINAL_NAME);
+    console.log('[getExtensionTerminal] Created new terminal for shell commands');
+    
     return sharedTerminal;
 }
 
