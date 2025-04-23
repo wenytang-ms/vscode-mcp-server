@@ -65,8 +65,8 @@ export async function createWorkspaceFile(
 export function registerEditTools(server: McpServer): void {
     // Add create_file tool
     server.tool(
-        'create_file',
-        'Use this tool to create new files in the VS Code workspace with specified content. It leverages VS Code\'s WorkspaceEdit API, which properly integrates with the editor\'s undo/redo stack and change tracking. The tool provides two optional parameters to handle existing files: \'overwrite\' (replace existing files) and \'ignoreIfExists\' (skip creation if file exists). When implementing new features, prefer creating files in appropriate locations based on the project\'s structure and conventions. This tool is ideal for generating configuration files, new source code files, documentation, or test files. Always verify the path doesn\'t already exist with list_files first unless you specifically want to overwrite it.',
+        'create_file_code',
+        'Use this tool to create new files in the VS Code workspace. This should be the primary tool for creating new files or making large changes when working with the codebase. The tool provides two optional parameters to handle existing files: \'overwrite\' (replace existing files) and \'ignoreIfExists\' (skip creation if file exists). When implementing new features, prefer creating files in appropriate locations based on the project\'s structure and conventions. Always verify the path doesn\'t already exist with list_files first unless you specifically want to overwrite it.',
         {
             path: z.string().describe('The path to the file to create'),
             content: z.string().describe('The content to write to the file'),

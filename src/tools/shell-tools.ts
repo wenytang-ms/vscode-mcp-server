@@ -1,0 +1,126 @@
+import * as vscode from 'vscode';
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from 'zod';
+import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+
+/**
+ * Waits briefly for shell integration to become available
+ * @param terminal The terminal to wait for
+ * @param timeout Maximum time to wait in milliseconds
+ * @returns Promise that resolves to true if shell integration became available
+ */
+async function waitForShellIntegration(terminal: vscode.Terminal, timeout = 1000): Promise<boolean> {
+    if (terminal.shellIntegration) {
+        return true;
+    }
+
+    return new Promise<boolean>(resolve => {
+        const timeoutId = setTimeout(() => {
+            disposable.dispose();
+            resolve(false);
+        }, timeout);
+
+        const disposable = vscode.window.onDidChangeTerminalShellIntegration(e => {
+            if (e.terminal === terminal && terminal.shellIntegration) {
+                clearTimeout(timeoutId);
+                disposable.dispose();
+                resolve(true);
+            }
+        });
+    });
+}
+
+/**
+ * Executes a shell command using terminal shell integration
+ * @param terminal The terminal with shell integration
+ * @param command The command to execute
+ * @param cwd Optional working directory for the command
+ * @returns Promise that resolves with the command output and exit code
+ */
+export async function executeShellCommand(
+    terminal: vscode.Terminal,
+    command: string,
+    cwd?: string
+): Promise<{ output: string; exitCode: number }> {
+    terminal.show();
+    
+    // Build full command including cd if cwd is specified
+    let fullCommand = command;
+    if (cwd) {
+        const quotedPath = cwd.includes(' ') ? `"${cwd}"` : cwd;
+        fullCommand = `cd ${quotedPath} && ${command}`;
+    }
+    
+    // Execute the command using shell integration API
+    const execution = terminal.shellIntegration!.executeCommand(fullCommand);
+    
+    // Capture output using the stream
+    let output = '';
+    
+    try {
+        // Access the read stream (handling possible API differences)
+        const outputStream = (execution as any).read();
+        for await (const data of outputStream) {
+            output += data;
+        }
+    } catch (error) {
+        throw new Error(`Failed to read command output: ${error}`);
+    }
+    
+    // Wait for the command to complete and get exit code
+    let exitCode: number;
+    try {
+        exitCode = await (execution as any).exitStatus.code;
+    } catch (error) {
+        throw new Error(`Failed to get command exit code: ${error}`);
+    }
+    
+    return { output, exitCode };
+}
+
+/**
+ * Registers MCP shell-related tools with the server
+ * @param server MCP server instance
+ * @param terminal The terminal to use for command execution
+ */
+export function registerShellTools(server: McpServer, terminal?: vscode.Terminal): void {
+    // Add execute_shell_command tool
+    server.tool(
+        'execute_shell_command',
+        'Executes a shell command in the VS Code integrated terminal with shell integration. Returns both the command output and exit code. This is useful for running CLI commands, build operations, git commands, or any other shell operations. Note: This tool requires shell integration to be available in the terminal.',
+        {
+            command: z.string().describe('The shell command to execute'),
+            cwd: z.string().optional().describe('Optional working directory for the command')
+        },
+        async ({ command, cwd }): Promise<CallToolResult> => {
+            try {
+                if (!terminal) {
+                    throw new Error('Terminal not available');
+                }
+                
+                // Check for shell integration - wait briefly if not available
+                if (!terminal.shellIntegration) {
+                    const shellIntegrationAvailable = await waitForShellIntegration(terminal);
+                    if (!shellIntegrationAvailable) {
+                        throw new Error('Shell integration not available in terminal');
+                    }
+                }
+                
+                const { output, exitCode } = await executeShellCommand(terminal, command, cwd);
+                
+                const result: CallToolResult = {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `Command: ${command}\nExit Code: ${exitCode}\n\nOutput:\n${output}`
+                        }
+                    ]
+                };
+                return result;
+            } catch (error) {
+                console.error('[execute_shell_command] Error in tool:', error);
+                throw error;
+            }
+        }
+    );
+}

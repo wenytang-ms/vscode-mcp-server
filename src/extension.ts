@@ -7,6 +7,21 @@ export { MCPServer };
 
 let mcpServer: MCPServer | undefined;
 let statusBarItem: vscode.StatusBarItem | undefined;
+let sharedTerminal: vscode.Terminal | undefined;
+
+/**
+ * Gets or creates the shared terminal for the extension
+ * @param context The extension context
+ * @returns The shared terminal instance
+ */
+export function getExtensionTerminal(context: vscode.ExtensionContext): vscode.Terminal {
+    if (!sharedTerminal || sharedTerminal.exitStatus !== undefined) {
+        // Create a new terminal if it doesn't exist or if it has exited
+        sharedTerminal = vscode.window.createTerminal('MCP Shell Commands');
+        console.log('[getExtensionTerminal] Created new terminal for shell commands');
+    }
+    return sharedTerminal;
+}
 
 // Function to update status bar
 function updateStatusBar(port: number) {
@@ -29,8 +44,11 @@ export async function activate(context: vscode.ExtensionContext) {
         
         console.log(`[activate] Using port ${port} from configuration`);
 
-        // Initialize MCP server with the configured port
-        mcpServer = new MCPServer(port);
+        // Create the shared terminal
+        const terminal = getExtensionTerminal(context);
+
+        // Initialize MCP server with the configured port and terminal
+        mcpServer = new MCPServer(port, terminal);
 
         // Set up file listing callback
         mcpServer.setFileListingCallback(async (path: string, recursive: boolean) => {
@@ -98,6 +116,12 @@ export async function deactivate() {
     if (statusBarItem) {
         statusBarItem.dispose();
         statusBarItem = undefined;
+    }
+
+    // Dispose the shared terminal
+    if (sharedTerminal) {
+        sharedTerminal.dispose();
+        sharedTerminal = undefined;
     }
 
     if (!mcpServer) return;

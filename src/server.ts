@@ -1,10 +1,13 @@
 import express from "express";
+import * as vscode from 'vscode';
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Server } from 'http';
 import { Request, Response } from 'express';
 import { registerFileTools, FileListingCallback } from './tools/file-tools';
 import { registerEditTools } from './tools/edit-tools';
+import { registerShellTools } from './tools/shell-tools';
+
 export class MCPServer {
     private server: McpServer;
     private transport: StreamableHTTPServerTransport;
@@ -12,13 +15,15 @@ export class MCPServer {
     private httpServer?: Server;
     private port: number;
     private fileListingCallback?: FileListingCallback;
+    private terminal?: vscode.Terminal;
 
     public setFileListingCallback(callback: FileListingCallback) {
         this.fileListingCallback = callback;
     }
 
-    constructor(port: number = 3000) {
+    constructor(port: number = 3000, terminal?: vscode.Terminal) {
         this.port = port;
+        this.terminal = terminal;
         this.app = express();
         this.app.use(express.json());
 
@@ -44,6 +49,7 @@ export class MCPServer {
         this.setupRoutes();
         this.setupEventHandlers();
     }
+    
     public setupTools(): void {
         // Register tools from the tools module
         if (this.fileListingCallback) {
@@ -54,6 +60,10 @@ export class MCPServer {
             // Register edit tools
             registerEditTools(this.server);
             console.log('MCP edit tools registered successfully');
+            
+            // Register shell tools
+            registerShellTools(this.server, this.terminal);
+            console.log('MCP shell tools registered successfully');
         } else {
             console.warn('File listing callback not set during tools setup');
         }
