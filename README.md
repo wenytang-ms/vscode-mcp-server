@@ -67,19 +67,19 @@ The extension creates an MCP server that:
 ## Supported MCP Tools
 
 ### File Tools
-- **list_files**: Lists files and directories in your workspace
+- **list_files_code**: Lists files and directories in your workspace
   - Parameters:
     - `path`: The path to list files from
     - `recursive` (optional): Whether to list files recursively
 
-- **read_file**: Reads file contents
+- **read_file_code**: Reads file contents
   - Parameters:
     - `path`: The path to the file to read
     - `encoding` (optional): File encoding (default: utf-8)
     - `maxCharacters` (optional): Maximum character count (default: 100,000)
 
 ### Edit Tools
-- **create_file**: Creates a new file using VS Code's WorkspaceEdit API
+- **create_file_code**: Creates a new file using VS Code's WorkspaceEdit API
   - Parameters:
     - `path`: The path to the file to create
     - `content`: The content to write to the file
@@ -87,7 +87,7 @@ The extension creates an MCP server that:
     - `ignoreIfExists` (optional): Whether to ignore if the file exists (default: false)
 
 ### Diagnostics Tools
-- **get_diagnostics**: Checks for warnings and errors in your workspace
+- **get_diagnostics_code**: Checks for warnings and errors in your workspace
   - Parameters:
     - `path` (optional): File path to check (if not provided, checks the entire workspace)
     - `severities` (optional): Array of severity levels to include (0=Error, 1=Warning, 2=Information, 3=Hint). Default: [0, 1]
@@ -98,6 +98,18 @@ The extension creates an MCP server that:
   - Code quality checks before committing changes
   - Verifying fixes resolved all reported issues
   - Identifying problems in specific files or the entire workspace
+
+### Shell Tools
+- **execute_shell_command_code**: Executes a shell command in the VS Code integrated terminal with shell integration
+  - Parameters:
+    - `command`: The shell command to execute
+    - `cwd` (optional): Optional working directory for the command (default: '.')
+
+  This tool is useful for:
+  - Running CLI commands and build operations
+  - Executing git commands
+  - Performing any shell operations that require terminal access
+  - Getting command output for analysis and further processing
 
 ## Caveats/TODO
 

@@ -25,6 +25,11 @@
           "minimum": 1024,
           "maximum": 65535,
           "description": "The port number for the MCP server"
+        },
+        "vscode-mcp-server.defaultEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the MCP server should be enabled by default on VS Code startup"
         }
       }
     },

@@ -99,12 +99,13 @@ export async function activate(context: vscode.ExtensionContext) {
     console.log('Activating vscode-mcp-server extension');
 
     try {
-        // Load saved state or default to disabled
-        serverEnabled = context.globalState.get('mcpServerEnabled', false);
-        
         // Get configuration
         const config = vscode.workspace.getConfiguration('vscode-mcp-server');
+        const defaultEnabled = config.get<boolean>('defaultEnabled') ?? false;
         const port = config.get<number>('port') || 3000;
+
+        // Load saved state or use configured default
+        serverEnabled = context.globalState.get('mcpServerEnabled', defaultEnabled);
         
         console.log(`[activate] Using port ${port} from configuration`);
         console.log(`[activate] Server enabled: ${serverEnabled}`);

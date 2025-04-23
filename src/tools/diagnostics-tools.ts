@@ -162,8 +162,17 @@ function formatDiagnostics(
 export function registerDiagnosticsTools(server: McpServer): void {
     // Add get_diagnostics tool
     server.tool(
-        'get_diagnostics',
-        'Use this tool to check for warnings and errors in the VS Code workspace. It can analyze a specific file or the entire workspace and returns diagnostics information including error messages, warnings, and their locations. This is useful for code quality checks, identifying issues before committing code, or ensuring all errors are fixed before deployment.',
+        'get_diagnostics_code',
+        `Analyzes code for warnings and errors in the VS Code workspace.
+
+        Features:
+        - Supports single file or workspace-wide analysis
+        - Returns detailed diagnostics with error messages and locations
+        - Provides severity levels (errors, warnings, info, hints)
+        - Uses linters integrated with VS Code
+
+        IMPORTANT: Ensure that you run this tool to check for issues
+        before considering any task complete!`,
         {
             path: z.string().optional().describe('Optional file path to check. If not provided, checks the entire workspace'),
             severities: z.array(z.number()).optional().default([0, 1]).describe('Array of severity levels to include (0=Error, 1=Warning, 2=Information, 3=Hint)'),
