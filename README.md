@@ -74,7 +74,7 @@ The extension creates an MCP server that:
 
 ## Caveats/TODO
 
-Currently, only one workspace is supported.
+Currently, only one workspace is supported. The extension also only works locally, to avoid exposing your VS Code instance to any network you may be connected to.
 
 ## Extension Settings
 

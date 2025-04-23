@@ -30,7 +30,8 @@ export function getExtensionTerminal(context: vscode.ExtensionContext): vscode.T
     // Create a new terminal if it doesn't exist or if it has exited
     sharedTerminal = vscode.window.createTerminal(TERMINAL_NAME);
     console.log('[getExtensionTerminal] Created new terminal for shell commands');
-    
+    context.subscriptions.push(sharedTerminal);
+
     return sharedTerminal;
 }
 
