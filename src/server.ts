@@ -168,8 +168,9 @@ export class MCPServer {
 
             // Start HTTP server
             return new Promise((resolve) => {
-                this.httpServer = this.app.listen(this.port, () => {
-                    console.log(`MCP Server listening on port ${this.port}`);
+                // Bind to localhost only for security
+                this.httpServer = this.app.listen(this.port, '127.0.0.1', () => {
+                    console.log(`MCP Server listening on localhost:${this.port}`);
                     resolve();
                 });
             });
