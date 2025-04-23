@@ -4,7 +4,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { Server } from 'http';
 import { Request, Response } from 'express';
 import { registerFileTools, FileListingCallback } from './tools/file-tools';
-
+import { registerEditTools } from './tools/edit-tools';
 export class MCPServer {
     private server: McpServer;
     private transport: StreamableHTTPServerTransport;
@@ -44,12 +44,16 @@ export class MCPServer {
         this.setupRoutes();
         this.setupEventHandlers();
     }
-
     public setupTools(): void {
         // Register tools from the tools module
         if (this.fileListingCallback) {
+            // Register file tools
             registerFileTools(this.server, this.fileListingCallback);
-            console.log('MCP tools registered successfully');
+            console.log('MCP file tools registered successfully');
+            
+            // Register edit tools
+            registerEditTools(this.server);
+            console.log('MCP edit tools registered successfully');
         } else {
             console.warn('File listing callback not set during tools setup');
         }
