@@ -8,6 +8,8 @@ export { MCPServer };
 let mcpServer: MCPServer | undefined;
 let statusBarItem: vscode.StatusBarItem | undefined;
 let sharedTerminal: vscode.Terminal | undefined;
+// Server state - disabled by default
+let serverEnabled: boolean = false;
 
 // Terminal name constant
 const TERMINAL_NAME = 'MCP Shell Commands';
@@ -41,80 +43,130 @@ function updateStatusBar(port: number) {
         return;
     }
 
-    statusBarItem.text = `$(server) MCP Server: ${port}`;
-    statusBarItem.tooltip = `MCP Server running at localhost:${port}`;
+    if (serverEnabled) {
+        statusBarItem.text = `$(server) MCP Server: ${port}`;
+        statusBarItem.tooltip = `MCP Server running at localhost:${port} (Click to toggle)`;
+        statusBarItem.backgroundColor = undefined;
+    } else {
+        statusBarItem.text = `$(server) MCP Server: Off`;
+        statusBarItem.tooltip = `MCP Server is disabled (Click to toggle)`;
+        // Use a subtle color to indicate disabled state
+        statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+    }
     statusBarItem.show();
+}
+
+// Function to toggle server state
+async function toggleServerState(context: vscode.ExtensionContext): Promise<void> {
+    serverEnabled = !serverEnabled;
+    
+    // Store state for persistence
+    context.globalState.update('mcpServerEnabled', serverEnabled);
+    
+    const config = vscode.workspace.getConfiguration('vscode-mcp-server');
+    const port = config.get<number>('port') || 3000;
+    
+    if (serverEnabled) {
+        // Start the server if it was disabled
+        if (!mcpServer) {
+            const terminal = getExtensionTerminal(context);
+            mcpServer = new MCPServer(port, terminal);
+            mcpServer.setFileListingCallback(async (path: string, recursive: boolean) => {
+                try {
+                    return await listWorkspaceFiles(path, recursive);
+                } catch (error) {
+                    console.error('Error listing files:', error);
+                    throw error;
+                }
+            });
+            mcpServer.setupTools();
+            await mcpServer.start();
+            vscode.window.showInformationMessage(`MCP Server enabled and running at http://localhost:${port}/mcp`);
+        }
+    } else {
+        // Stop the server if it was enabled
+        if (mcpServer) {
+            await mcpServer.stop();
+            mcpServer = undefined;
+            vscode.window.showInformationMessage('MCP Server has been disabled');
+        }
+    }
+    
+    updateStatusBar(port);
 }
 
 export async function activate(context: vscode.ExtensionContext) {
     console.log('Activating vscode-mcp-server extension');
 
     try {
+        // Load saved state or default to disabled
+        serverEnabled = context.globalState.get('mcpServerEnabled', false);
+        
         // Get configuration
         const config = vscode.workspace.getConfiguration('vscode-mcp-server');
         const port = config.get<number>('port') || 3000;
         
         console.log(`[activate] Using port ${port} from configuration`);
-
-        // Create the shared terminal
-        const terminal = getExtensionTerminal(context);
-
-        // Initialize MCP server with the configured port and terminal
-        mcpServer = new MCPServer(port, terminal);
-
-        // Set up file listing callback
-        mcpServer.setFileListingCallback(async (path: string, recursive: boolean) => {
-            try {
-                return await listWorkspaceFiles(path, recursive);
-            } catch (error) {
-                console.error('Error listing files:', error);
-                throw error;
-            }
-        });
-        
-        // Call setupTools after setting the callback
-        mcpServer.setupTools();
-
-        await mcpServer.start();
-        console.log('MCP Server started successfully');
+        console.log(`[activate] Server enabled: ${serverEnabled}`);
 
         // Create status bar item
         statusBarItem = vscode.window.createStatusBarItem(
             vscode.StatusBarAlignment.Right,
             100
         );
-        statusBarItem.command = 'vscode-mcp-server.showServerInfo';
+        statusBarItem.command = 'vscode-mcp-server.toggleServer';
+        
+        // Only start the server if enabled
+        if (serverEnabled) {
+            // Create the shared terminal
+            const terminal = getExtensionTerminal(context);
+
+            // Initialize MCP server with the configured port and terminal
+            mcpServer = new MCPServer(port, terminal);
+
+            // Set up file listing callback
+            mcpServer.setFileListingCallback(async (path: string, recursive: boolean) => {
+                try {
+                    return await listWorkspaceFiles(path, recursive);
+                } catch (error) {
+                    console.error('Error listing files:', error);
+                    throw error;
+                }
+            });
+            
+            // Call setupTools after setting the callback
+            mcpServer.setupTools();
+
+            await mcpServer.start();
+            console.log('MCP Server started successfully');
+        } else {
+            console.log('MCP Server is disabled by default');
+        }
+        
+        // Update status bar after server state is determined
         updateStatusBar(port);
 
         // Register commands
-        const statusCommand = vscode.commands.registerCommand('vscode-mcp-server.status', () => {
-            vscode.window.showInformationMessage('MCP Server is running!');
-        });
+        const toggleServerCommand = vscode.commands.registerCommand(
+            'vscode-mcp-server.toggleServer', 
+            () => toggleServerState(context)
+        );
 
-        const showServerInfoCommand = vscode.commands.registerCommand('vscode-mcp-server.showServerInfo', () => {
-            vscode.window.showInformationMessage(`MCP Server is running at http://localhost:${port}/mcp`);
-        });
-
-        // Listen for configuration changes
-        context.subscriptions.push(
-            vscode.workspace.onDidChangeConfiguration(e => {
-                if (e.affectsConfiguration('vscode-mcp-server.port')) {
-                    vscode.window.showInformationMessage(
-                        'MCP Server port configuration changed. Please reload the window to apply the changes.',
-                        'Reload'
-                    ).then(selection => {
-                        if (selection === 'Reload') {
-                            vscode.commands.executeCommand('workbench.action.reloadWindow');
-                        }
-                    });
+        const showServerInfoCommand = vscode.commands.registerCommand(
+            'vscode-mcp-server.showServerInfo', 
+            () => {
+                if (serverEnabled) {
+                    vscode.window.showInformationMessage(`MCP Server is running at http://localhost:${port}/mcp`);
+                } else {
+                    vscode.window.showInformationMessage('MCP Server is currently disabled. Click on the status bar item to enable it.');
                 }
-            })
+            }
         );
 
         // Add all disposables to the context subscriptions
         context.subscriptions.push(
             statusBarItem,
-            statusCommand,
+            toggleServerCommand,
             showServerInfoCommand,
             { dispose: async () => mcpServer && await mcpServer.stop() }
         );

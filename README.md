@@ -1,7 +1,20 @@
 # VS Code MCP Server
 
-A Visual Studio Code extension that allows Claude and other MCP clients to code directly in VS Code! Inspired by [Serena](https://github.com/oraios/serena), but using VS Code's built-in capabilities. This is currently far simpler than Serena, but it works! Note that this extension uses the streamable HTTP API, not the SSE API, which is somewhat bleeding-edge.
+A Visual Studio Code extension that allows Claude and other MCP clients to code directly in VS Code! Inspired by [Serena](https://github.com/oraios/serena), but using VS Code's built-in capabilities. This is currently far simpler than Serena, but it works! Note that this extension uses the streamable HTTP API, not the SSE API.
 
+This extension can allow for execution of shell commands. This means that there is a potential security risk, so use with caution, and ensure that you trust the MCP client that you are using and that the port is not exposed to anything. 
+
+## Server Toggle Functionality
+
+For enhanced security and control, the MCP server can be easily toggled on and off:
+
+- **Default State**: The MCP server is **disabled by default** when you first install the extension.
+- **Toggle Method**: Click on the MCP Server status item in the status bar to toggle the server on or off.
+- **Visual Indicator**: The status bar shows the current state:
+  - `MCP Server: Off` - Server is disabled
+  - `MCP Server: <port>` - Server is running on the specified port
+
+This toggle feature allows you to enable the server only when needed and disable it when not in use for better security.
 
 ## Claude Desktop Configuration
 
@@ -45,10 +58,10 @@ This extension enables AI assistants and other tools to interact with your VS Co
 
 The extension creates an MCP server that:
 
-1. Runs locally on a configurable port
+1. Runs locally on a configurable port (when enabled)
 2. Handles MCP protocol requests via HTTP
 3. Exposes VS Code's functionality as MCP tools
-4. Provides a status bar indicator showing server status
+4. Provides a status bar indicator showing server status, which can be clicked to toggle the server on/off
 
 ## Supported MCP Tools
 
@@ -88,6 +101,8 @@ To connect MCP clients to this server, configure them to use:
 ```
 http://localhost:3000/mcp
 ```
+
+Remember that you need to enable the server first by clicking on the status bar item!
 
 ## Contributing
 
