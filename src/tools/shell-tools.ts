@@ -41,14 +41,18 @@ export async function executeShellCommand(
     terminal: vscode.Terminal,
     command: string,
     cwd?: string
-): Promise<{ output: string; exitCode: number }> {
+): Promise<{ output: string }> {
     terminal.show();
     
     // Build full command including cd if cwd is specified
     let fullCommand = command;
     if (cwd) {
-        const quotedPath = cwd.includes(' ') ? `"${cwd}"` : cwd;
-        fullCommand = `cd ${quotedPath} && ${command}`;
+        if (cwd === '.' || cwd === './') {
+            fullCommand = `${command}`;
+        } else {
+            const quotedPath = cwd.includes(' ') ? `"${cwd}"` : cwd;
+            fullCommand = `cd ${quotedPath} && ${command}`;
+        }
     }
     
     // Execute the command using shell integration API
@@ -67,15 +71,7 @@ export async function executeShellCommand(
         throw new Error(`Failed to read command output: ${error}`);
     }
     
-    // Wait for the command to complete and get exit code
-    let exitCode: number;
-    try {
-        exitCode = await (execution as any).exitStatus.code;
-    } catch (error) {
-        throw new Error(`Failed to get command exit code: ${error}`);
-    }
-    
-    return { output, exitCode };
+    return { output };
 }
 
 /**
@@ -86,11 +82,11 @@ export async function executeShellCommand(
 export function registerShellTools(server: McpServer, terminal?: vscode.Terminal): void {
     // Add execute_shell_command tool
     server.tool(
-        'execute_shell_command',
+        'execute_shell_command_code',
         'Executes a shell command in the VS Code integrated terminal with shell integration. Returns both the command output and exit code. This is useful for running CLI commands, build operations, git commands, or any other shell operations. Note: This tool requires shell integration to be available in the terminal.',
         {
             command: z.string().describe('The shell command to execute'),
-            cwd: z.string().optional().describe('Optional working directory for the command')
+            cwd: z.string().optional().default('.').describe('Optional working directory for the command')
         },
         async ({ command, cwd }): Promise<CallToolResult> => {
             try {
@@ -106,13 +102,13 @@ export function registerShellTools(server: McpServer, terminal?: vscode.Terminal
                     }
                 }
                 
-                const { output, exitCode } = await executeShellCommand(terminal, command, cwd);
+                const { output } = await executeShellCommand(terminal, command, cwd);
                 
                 const result: CallToolResult = {
                     content: [
                         {
                             type: 'text',
-                            text: `Command: ${command}\nExit Code: ${exitCode}\n\nOutput:\n${output}`
+                            text: `Command: ${command}\n\nOutput:\n${output}`
                         }
                     ]
                 };
