@@ -51,6 +51,7 @@ The VS Code MCP Server extension implements an MCP-compliant server that allows 
 - **List files and directories** in your VS Code workspace
 - **Read file contents** with encoding support and size limits
 - **Create new files** using VS Code's WorkspaceEdit API
+- **Check for diagnostics** (errors and warnings) in your workspace
 
 This extension enables AI assistants and other tools to interact with your VS Code workspace through the standardized MCP protocol.
 
@@ -84,6 +85,19 @@ The extension creates an MCP server that:
     - `content`: The content to write to the file
     - `overwrite` (optional): Whether to overwrite if the file exists (default: false)
     - `ignoreIfExists` (optional): Whether to ignore if the file exists (default: false)
+
+### Diagnostics Tools
+- **get_diagnostics**: Checks for warnings and errors in your workspace
+  - Parameters:
+    - `path` (optional): File path to check (if not provided, checks the entire workspace)
+    - `severities` (optional): Array of severity levels to include (0=Error, 1=Warning, 2=Information, 3=Hint). Default: [0, 1]
+    - `format` (optional): Output format ('text' or 'json'). Default: 'text'
+    - `includeSource` (optional): Whether to include the diagnostic source. Default: true
+
+  This tool is particularly useful for:
+  - Code quality checks before committing changes
+  - Verifying fixes resolved all reported issues
+  - Identifying problems in specific files or the entire workspace
 
 ## Caveats/TODO
 

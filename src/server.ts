@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import { registerFileTools, FileListingCallback } from './tools/file-tools';
 import { registerEditTools } from './tools/edit-tools';
 import { registerShellTools } from './tools/shell-tools';
+import { registerDiagnosticsTools } from './tools/diagnostics-tools';
 
 export class MCPServer {
     private server: McpServer;
@@ -64,6 +65,10 @@ export class MCPServer {
             // Register shell tools
             registerShellTools(this.server, this.terminal);
             console.log('MCP shell tools registered successfully');
+            
+            // Register diagnostics tools
+            registerDiagnosticsTools(this.server);
+            console.log('MCP diagnostics tools registered successfully');
         } else {
             console.warn('File listing callback not set during tools setup');
         }
