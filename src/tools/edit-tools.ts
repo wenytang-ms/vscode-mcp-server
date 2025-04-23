@@ -49,11 +49,100 @@ export async function createWorkspaceFile(
         
         if (success) {
             console.log(`[createWorkspaceFile] File created successfully: ${fileUri.fsPath}`);
+            
+            // Open the document to trigger linting
+            const document = await vscode.workspace.openTextDocument(fileUri);
+            await vscode.window.showTextDocument(document);
+            console.log(`[createWorkspaceFile] File opened in editor`);
         } else {
             throw new Error(`Failed to create file: ${fileUri.fsPath}`);
         }
     } catch (error) {
         console.error('[createWorkspaceFile] Error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Replaces specific lines in a file in the VS Code workspace
+ * @param workspacePath The path within the workspace to the file
+ * @param startLine The start line number (0-based, inclusive)
+ * @param endLine The end line number (0-based, inclusive)
+ * @param content The new content to replace the lines with
+ * @param originalCode The original code for validation
+ * @returns Promise that resolves when the edit operation completes
+ */
+export async function replaceWorkspaceFileLines(
+    workspacePath: string,
+    startLine: number,
+    endLine: number,
+    content: string,
+    originalCode: string
+): Promise<void> {
+    console.log(`[replaceWorkspaceFileLines] Starting with path: ${workspacePath}, lines: ${startLine}-${endLine}`);
+    
+    if (!vscode.workspace.workspaceFolders) {
+        throw new Error('No workspace folder is open');
+    }
+
+    const workspaceFolder = vscode.workspace.workspaceFolders[0];
+    const workspaceUri = workspaceFolder.uri;
+    
+    // Create URI for the target file
+    const fileUri = vscode.Uri.joinPath(workspaceUri, workspacePath);
+    console.log(`[replaceWorkspaceFileLines] File URI: ${fileUri.fsPath}`);
+
+    try {
+        // Open the document (or get it if already open)
+        const document = await vscode.workspace.openTextDocument(fileUri);
+        
+        // Validate line numbers
+        if (startLine < 0 || startLine >= document.lineCount) {
+            throw new Error(`Start line ${startLine} is out of range (0-${document.lineCount-1})`);
+        }
+        if (endLine < startLine || endLine >= document.lineCount) {
+            throw new Error(`End line ${endLine} is out of range (${startLine}-${document.lineCount-1})`);
+        }
+        
+        // Get the current content of the lines
+        const currentLines = [];
+        for (let i = startLine; i <= endLine; i++) {
+            currentLines.push(document.lineAt(i).text);
+        }
+        const currentContent = currentLines.join('\n');
+        
+        // Compare with the provided original code
+        if (currentContent !== originalCode) {
+            throw new Error(`Original code validation failed. The current content does not match the provided original code.`);
+        }
+        
+        // Create a range for the lines to replace
+        const startPos = new vscode.Position(startLine, 0);
+        const endPos = new vscode.Position(endLine, document.lineAt(endLine).text.length);
+        const range = new vscode.Range(startPos, endPos);
+        
+        // Get the active text editor or show the document
+        let editor = vscode.window.activeTextEditor;
+        if (!editor || editor.document.uri.toString() !== fileUri.toString()) {
+            editor = await vscode.window.showTextDocument(document);
+        }
+        
+        // Apply the edit
+        const success = await editor.edit((editBuilder) => {
+            editBuilder.replace(range, content);
+        });
+        
+        if (success) {
+            console.log(`[replaceWorkspaceFileLines] Lines replaced successfully`);
+            
+            // Save the document to persist changes
+            await document.save();
+            console.log(`[replaceWorkspaceFileLines] Document saved`);
+        } else {
+            throw new Error(`Failed to replace lines in file: ${fileUri.fsPath}`);
+        }
+    } catch (error) {
+        console.error('[replaceWorkspaceFileLines] Error:', error);
         throw error;
     }
 }
@@ -92,6 +181,41 @@ export function registerEditTools(server: McpServer): void {
                 return result;
             } catch (error) {
                 console.error('[create_file] Error in tool:', error);
+                throw error;
+            }
+        }
+    );
+
+    // Add replace_lines_code tool
+    server.tool(
+        'replace_lines_code',
+        'Use this tool to selectively replace specific lines of code in a file. The function takes both the original code and line numbers to prevent mistakes. Always verify the line numbers and content before using this tool. This is useful for making targeted changes to specific parts of a file without modifying the rest of the content.',
+        {
+            path: z.string().describe('The path to the file to modify'),
+            startLine: z.number().describe('The start line number (0-based, inclusive)'),
+            endLine: z.number().describe('The end line number (0-based, inclusive)'),
+            content: z.string().describe('The new content to replace the lines with'),
+            originalCode: z.string().describe('The original code for validation - must match exactly')
+        },
+        async ({ path, startLine, endLine, content, originalCode }): Promise<CallToolResult> => {
+            console.log(`[replace_lines_code] Tool called with path=${path}, startLine=${startLine}, endLine=${endLine}`);
+            
+            try {
+                console.log('[replace_lines_code] Replacing lines');
+                await replaceWorkspaceFileLines(path, startLine, endLine, content, originalCode);
+                
+                const result: CallToolResult = {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `Lines ${startLine}-${endLine} in file ${path} replaced successfully`
+                        }
+                    ]
+                };
+                console.log('[replace_lines_code] Successfully completed');
+                return result;
+            } catch (error) {
+                console.error('[replace_lines_code] Error in tool:', error);
                 throw error;
             }
         }

@@ -68,14 +68,18 @@ export async function listWorkspaceFiles(workspacePath: string, recursive: boole
  * @param workspacePath The path within the workspace to the file
  * @param encoding Optional encoding to convert the file content to a string
  * @param maxCharacters Maximum character count (default: 100,000)
+ * @param startLine The start line number (0-based, inclusive). Use -1 to read from the beginning.
+ * @param endLine The end line number (0-based, inclusive). Use -1 to read to the end.
  * @returns File content as Uint8Array or string if encoding is provided
  */
 export async function readWorkspaceFile(
     workspacePath: string, 
     encoding?: string | null, 
-    maxCharacters: number = DEFAULT_MAX_CHARACTERS
+    maxCharacters: number = DEFAULT_MAX_CHARACTERS,
+    startLine: number = -1,
+    endLine: number = -1
 ): Promise<Uint8Array | string> {
-    console.log(`[readWorkspaceFile] Starting with path: ${workspacePath}, encoding: ${encoding || 'none'}, maxCharacters: ${maxCharacters}`);
+    console.log(`[readWorkspaceFile] Starting with path: ${workspacePath}, encoding: ${encoding || 'none'}, maxCharacters: ${maxCharacters}, startLine: ${startLine}, endLine: ${endLine}`);
     
     if (!vscode.workspace.workspaceFolders) {
         throw new Error('No workspace folder is open');
@@ -103,11 +107,41 @@ export async function readWorkspaceFile(
                 throw new Error(`File content exceeds the maximum character limit (${textContent.length} vs ${maxCharacters} allowed)`);
             }
             
+            // If line numbers are specified and valid, extract just those lines
+            if (startLine >= 0 || endLine >= 0) {
+                // Split the content into lines
+                const lines = textContent.split('\n');
+                
+                // Set effective start and end lines
+                const effectiveStartLine = startLine >= 0 ? startLine : 0;
+                const effectiveEndLine = endLine >= 0 ? Math.min(endLine, lines.length - 1) : lines.length - 1;
+                
+                // Validate line numbers
+                if (effectiveStartLine >= lines.length) {
+                    throw new Error(`Start line ${effectiveStartLine} is out of range (0-${lines.length-1})`);
+                }
+                
+                // Make sure endLine is not less than startLine
+                if (effectiveEndLine < effectiveStartLine) {
+                    throw new Error(`End line ${effectiveEndLine} is less than start line ${effectiveStartLine}`);
+                }
+                
+                // Extract the requested lines and join them back together
+                const partialContent = lines.slice(effectiveStartLine, effectiveEndLine + 1).join('\n');
+                console.log(`[readWorkspaceFile] Returning lines ${effectiveStartLine}-${effectiveEndLine}, length: ${partialContent.length} characters`);
+                return partialContent;
+            }
+            
             return textContent;
         } else {
             // For binary content, use byte length as approximation
             if (fileContent.byteLength > maxCharacters) {
                 throw new Error(`File content exceeds the maximum character limit (approx. ${fileContent.byteLength} bytes vs ${maxCharacters} allowed)`);
+            }
+            
+            // For binary files, we cannot extract lines, so we ignore startLine and endLine
+            if (startLine >= 0 || endLine >= 0) {
+                console.warn(`[readWorkspaceFile] Line numbers specified for binary file, ignoring`);
             }
             
             // Otherwise return the raw bytes
@@ -181,21 +215,38 @@ export function registerFileTools(
         }
     );
 
-    // Add read_file tool with proper nullable and default values
+    // Update read_file tool with line number parameters
     server.tool(
         'read_file_code',
-        'Use this tool to retrieve and analyze the contents of a file in the VS Code workspace. It returns the text content of the specified file path with optional encoding support. The tool enforces a character limit (default: 100,000) to prevent loading excessively large files. When working with code files, use this tool to understand existing implementations, check dependencies, or analyze patterns before suggesting edits. The default encoding is \'utf-8\', but you can specify other encodings as needed.',
+        `Use this tool to retrieve and analyze the contents of a file in the VS Code workspace.
+
+        Key features:
+        - Returns text content with optional encoding support (default: utf-8)
+        - Enforces character limit (default: 100,000) to prevent loading large files
+        - Supports partial file reading using line numbers (startLine and endLine)
+        
+        Use cases:
+        - Understanding existing code implementations
+        - Analyzing code patterns and dependencies
+        - Reviewing configuration files
+        - Extracting specific sections of large files
+        
+        Recommendation:
+        Use startLine and endLine parameters for large files to read only the relevant portions.
+        For text files, utf-8 encoding is recommended unless another encoding is specifically needed.`,
         {
             path: z.string().describe('The path to the file to read'),
             encoding: z.string().optional().default('utf-8').describe('Optional encoding to convert the file content to a string'),
-            maxCharacters: z.number().optional().default(DEFAULT_MAX_CHARACTERS).describe('Maximum character count (default: 100,000)')
+            maxCharacters: z.number().optional().default(DEFAULT_MAX_CHARACTERS).describe('Maximum character count (default: 100,000)'),
+            startLine: z.number().optional().default(-1).describe('The start line number (0-based, inclusive). Default: read from beginning, denoted by -1'),
+            endLine: z.number().optional().default(-1).describe('The end line number (0-based, inclusive). Default: read to end, denoted by -1')
         },
-        async ({ path, encoding = null, maxCharacters = DEFAULT_MAX_CHARACTERS }): Promise<CallToolResult> => {
-            console.log(`[read_file] Tool called with path=${path}, encoding=${encoding || 'none'}, maxCharacters=${maxCharacters}`);
+        async ({ path, encoding = 'utf-8', maxCharacters = DEFAULT_MAX_CHARACTERS, startLine = -1, endLine = -1 }): Promise<CallToolResult> => {
+            console.log(`[read_file] Tool called with path=${path}, encoding=${encoding || 'none'}, maxCharacters=${maxCharacters}, startLine=${startLine}, endLine=${endLine}`);
             
             try {
                 console.log('[read_file] Reading file');
-                const content = await readWorkspaceFile(path, encoding, maxCharacters);
+                const content = await readWorkspaceFile(path, encoding, maxCharacters, startLine, endLine);
                 
                 let resultContent: string;
                 if (content instanceof Uint8Array) {
