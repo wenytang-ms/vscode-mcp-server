@@ -10,23 +10,10 @@
    inkscape:export-ydpi="40.959999"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <defs
      id="defs28">
-    <linearGradient
-       inkscape:collect="always"
-       id="linearGradient15589">
-      <stop
-         style="stop-color:#0c0c0c;stop-opacity:1;"
-         offset="0"
-         id="stop15585" />
-      <stop
-         style="stop-color:#393939;stop-opacity:1;"
-         offset="1"
-         id="stop15587" />
-    </linearGradient>
     <linearGradient
        id="linearGradient12113"
        inkscape:swatch="gradient">
@@ -39,15 +26,6 @@
          offset="1"
          id="stop12111" />
     </linearGradient>
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient15589"
-       id="linearGradient15591"
-       x1="270.9317"
-       y1="259.91449"
-       x2="270.9317"
-       y2="42.884747"
-       gradientUnits="userSpaceOnUse" />
   </defs>
   <sodipodi:namedview
      id="namedview26"
@@ -60,7 +38,7 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="0.96755778"
-     inkscape:cx="1.03353"
+     inkscape:cx="-66.145921"
      inkscape:cy="63.562095"
      inkscape:window-width="2256"
      inkscape:window-height="1439"
@@ -69,73 +47,32 @@
      inkscape:window-maximized="1"
      inkscape:current-layer="svg24" />
   <rect
-     style="fill:url(#linearGradient15591);fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-     id="rect15583"
+     style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
+     id="rect2626"
      width="300"
      height="300"
      x="0"
-     y="0"
-     rx="15"
-     ry="15" />
+     y="0" />
   <!-- Simple robot-inspired logo with code elements -->
-  <g
-     fill="none"
-     stroke="#000000"
-     stroke-width="10"
-     stroke-linecap="round"
-     stroke-linejoin="round"
-     id="g22"
-     transform="translate(0,-45.915875)"
-     style="fill:#474747;fill-opacity:1;stroke:#e6e6e6;stroke-opacity:1">
-    <!-- Code brackets -->
-    <!-- Robot head -->
-    <rect
-       x="100"
-       y="122"
-       width="100"
-       height="100"
-       rx="15"
-       ry="15"
-       id="rect6"
-       style="fill:#474747;fill-opacity:1;stroke:#e6e6e6;stroke-opacity:1" />
-    <!-- Robot eyes -->
-    <!-- Robot antenna -->
-    <line
-       x1="150"
-       y1="122"
-       x2="150"
-       y2="102"
-       id="line12"
-       style="fill:#474747;fill-opacity:1;stroke:#e6e6e6;stroke-opacity:1" />
-    <circle
-       cx="150"
-       cy="92"
-       r="10"
-       id="circle14"
-       style="fill:#474747;fill-opacity:1;stroke:#e6e6e6;stroke-opacity:1" />
-    <!-- Robot mouth (code-like) -->
-    <!-- Code lines inside the robot -->
-    <path
-       style="fill:#474747;fill-opacity:1;stroke:#e6e6e6;stroke-width:10;stroke-linecap:round;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
-       d="m 85,136.68937 v 60.62125"
-       id="path576" />
-    <path
-       style="fill:#474747;fill-opacity:1;stroke:#e6e6e6;stroke-width:10;stroke-linecap:round;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
-       d="m 215,136.68938 v 60.62124"
-       id="path576-3" />
-  </g>
   <text
      xml:space="preserve"
-     style="font-style:normal;font-weight:900;font-size:40px;line-height:1.25;font-family:'Source Sans 3';text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke:none;-inkscape-font-specification:'Source Sans 3, Heavy';font-stretch:normal;font-variant:normal;font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal"
-     x="148.36"
-     y="231.63174"
-     id="text15481"><tspan
+     style="font-style:normal;font-variant:normal;font-weight:900;font-stretch:normal;font-size:80px;line-height:1.25;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro, Heavy';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none"
+     x="7.7599239"
+     y="77.360001"
+     id="text2890"><tspan
        sodipodi:role="line"
-       id="tspan15479"
-       x="148.36"
-       y="231.63174">VS Code</tspan><tspan
+       id="tspan2888"
+       x="7.7599239"
+       y="77.360001"
+       style="font-style:normal;font-variant:normal;font-weight:900;font-stretch:normal;font-size:80px;font-family:'Source Sans 3';-inkscape-font-specification:'Source Sans 3, Heavy';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#1fa9f9;fill-opacity:1">VSCode</tspan><tspan
        sodipodi:role="line"
-       x="148.36"
-       y="281.63174"
-       id="tspan15483">MCP Server</tspan></text>
+       x="7.7599239"
+       y="177.69182"
+       id="tspan2892"
+       style="font-style:normal;font-variant:normal;font-weight:900;font-stretch:normal;font-size:80px;font-family:'Source Sans 3';-inkscape-font-specification:'Source Sans 3, Heavy';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#f9f9f9;fill-opacity:1">MCP</tspan><tspan
+       sodipodi:role="line"
+       x="7.7599239"
+       y="278.02365"
+       style="font-style:normal;font-variant:normal;font-weight:900;font-stretch:normal;font-size:80px;font-family:'Source Sans 3';-inkscape-font-specification:'Source Sans 3, Heavy';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#f9f9f9;fill-opacity:1"
+       id="tspan2894">Server</tspan></text>
 </svg>
