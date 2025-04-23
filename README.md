@@ -12,8 +12,6 @@ The VS Code MCP Server extension implements an MCP-compliant server that allows 
 
 This extension enables AI assistants and other tools to interact with your VS Code workspace through the standardized MCP protocol.
 
-![Feature illustration](images/feature-illustration.png)
-
 ## How It Works
 
 The extension creates an MCP server that:
