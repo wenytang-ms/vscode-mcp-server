@@ -131,7 +131,22 @@ export function registerFileTools(
     // Add list_files tool
     server.tool(
         'list_files_code',
-        'Use this tool to explore the directory structure of the VS Code workspace. It returns a list of files and directories at the specified path. When \'recursive\' is set to true, it will include all nested files and subdirectories. This tool is useful when you need to understand the project structure, find specific file types, or check if certain files exist before attempting to read or modify them. Start by exploring the root directory with path=\'.\' before diving into specific subdirectories.',
+        `Use this tool to explore the directory structure of the VS Code workspace.
+
+        Key features:
+        - Returns a list of files and directories at the specified path
+        - When 'recursive' is set to true, it includes all nested files and subdirectories
+        
+        Use cases:
+        - Understanding project structure
+        - Finding specific file types
+        - Verifying file existence before read/modify operations
+        
+        Recommendation:
+        Start by exploring the root directory with path='.' before diving into specific subdirectories.
+        Do not EVER set 'recursive' to true in the root directory as the output may be too large.
+        Instead, use it to explore specific subdirectories.
+        `,
         {
             path: z.string().describe('The path to list files from'),
             recursive: z.boolean().optional().default(false).describe('Whether to list files recursively')
