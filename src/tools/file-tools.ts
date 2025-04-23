@@ -131,7 +131,7 @@ export function registerFileTools(
     // Add list_files tool
     server.tool(
         'list_files',
-        'Lists files and directories in the VS Code workspace',
+        'Use this tool to explore the directory structure of the VS Code workspace. It returns a list of files and directories at the specified path. When \'recursive\' is set to true, it will include all nested files and subdirectories. This tool is useful when you need to understand the project structure, find specific file types, or check if certain files exist before attempting to read or modify them. The response is formatted as a JSON array of objects with \'path\' and \'type\' properties, where type is either \'file\' or \'directory\'. Start by exploring the root directory with path=\'.\' before diving into specific subdirectories.',
         {
             path: z.string().describe('The path to list files from'),
             recursive: z.boolean().optional().default(false).describe('Whether to list files recursively')
@@ -169,7 +169,7 @@ export function registerFileTools(
     // Add read_file tool with proper nullable and default values
     server.tool(
         'read_file',
-        'Reads a file from the VS Code workspace (max: 100,000 characters)',
+        'Use this tool to retrieve and analyze the contents of files in the VS Code workspace. It returns the text content of the specified file path with optional encoding support. The tool enforces a character limit (default: 100,000) to prevent loading excessively large files. When working with code files, use this tool to understand existing implementations, check dependencies, or analyze patterns before suggesting edits. For binary files, the content will be base64-encoded. Always check file existence with list_files before attempting to read it. Consider specifying an appropriate encoding (e.g., \'utf-8\', \'latin1\') based on the file type.',
         {
             path: z.string().describe('The path to the file to read'),
             encoding: z.string().optional().default('utf-8').describe('Optional encoding to convert the file content to a string'),
