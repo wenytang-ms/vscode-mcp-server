@@ -174,10 +174,10 @@ export function registerDiagnosticsTools(server: McpServer): void {
         IMPORTANT: Ensure that you run this tool to check for issues
         before considering any task complete!`,
         {
-            path: z.string().optional().describe('Optional file path to check. If not provided, checks the entire workspace'),
+            path: z.string().optional().default('').describe('Optional file path to check. If not provided, checks the entire workspace'),
             severities: z.array(z.number()).optional().default([0, 1]).describe('Array of severity levels to include (0=Error, 1=Warning, 2=Information, 3=Hint)'),
             format: z.enum(['text', 'json']).optional().default('text').describe('Output format'),
-            includeSource: z.boolean().optional().default(true).describe('Whether to include the diagnostic source')
+            includeSource: z.boolean().optional().default(true).describe('Whether to include the diagnostic source to identify which linter/extension flagged each issue')
         },
         async ({ path, severities = [0, 1], format = 'text', includeSource = true }): Promise<CallToolResult> => {
             console.log(`[get_diagnostics] Tool called with path=${path || 'all'}, severities=${severities.join(',')}, format=${format}`);
