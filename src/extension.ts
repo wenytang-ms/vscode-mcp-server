@@ -24,6 +24,7 @@ function getToolConfiguration(): ToolConfiguration {
     const enabledTools = config.get<any>('enabledTools') || {};
     
     return {
+        command: enabledTools.command ?? true,
         file: enabledTools.file ?? true,
         edit: enabledTools.edit ?? true,
         shell: enabledTools.shell ?? true,

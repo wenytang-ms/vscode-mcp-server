@@ -43,6 +43,10 @@
             "symbol": true
           },
           "properties": {
+            "command": {
+              "type": "boolean",
+              "description": "Enable command execution tools (run commands, tasks, etc.)"
+            },
             "file": {
               "type": "boolean",
               "description": "Enable file operations tools (read, write, list files)"
@@ -69,10 +73,6 @@
       }
     },
     "commands": [
-      {
-        "command": "vscode-mcp-server.helloWorld",
-        "title": "Hello World"
-      },
       {
         "command": "vscode-mcp-server.showServerInfo",
         "title": "Show MCP Server Information"

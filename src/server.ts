@@ -3,11 +3,11 @@ import * as vscode from 'vscode';
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Server } from 'http';
-import { Request, Response } from 'express';
 import { registerFileTools, FileListingCallback } from './tools/file-tools';
 import { registerEditTools } from './tools/edit-tools';
 import { registerShellTools } from './tools/shell-tools';
 import { registerDiagnosticsTools } from './tools/diagnostics-tools';
+import { registerCommandTools } from './tools/command-tools';
 import { registerSymbolTools } from './tools/symbol-tools';
 import { logger } from './utils/logger';
 
@@ -17,6 +17,7 @@ export interface ToolConfiguration {
     shell: boolean;
     diagnostics: boolean;
     symbol: boolean;
+    command: boolean;
 }
 
 export class MCPServer {
@@ -37,6 +38,7 @@ export class MCPServer {
         this.port = port;
         this.terminal = terminal;
         this.toolConfig = toolConfig || {
+            command: true,
             file: true,
             edit: true,
             shell: true,
@@ -73,7 +75,12 @@ export class MCPServer {
         // Register tools from the tools module based on configuration
         if (this.fileListingCallback) {
             logger.info(`Setting up MCP tools with configuration: ${JSON.stringify(this.toolConfig)}`);
-            
+            if(this.toolConfig.command) {
+                logger.info('Command execution tools are enabled');
+                registerCommandTools(this.server);
+            } else {
+                logger.info('Command execution tools are disabled');
+            }
             // Register file tools if enabled
             if (this.toolConfig.file) {
                 registerFileTools(this.server, this.fileListingCallback);
