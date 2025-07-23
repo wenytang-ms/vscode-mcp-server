@@ -85,7 +85,7 @@ async function toggleServerState(context: vscode.ExtensionContext): Promise<void
     context.globalState.update('mcpServerEnabled', serverEnabled);
     
     const config = vscode.workspace.getConfiguration('vscode-mcp-server');
-    const port = config.get<number>('port') || 3000;
+    const port = config.get<number>('port') || 8345;
     
     // Update status bar immediately to provide feedback
     updateStatusBar(port);
