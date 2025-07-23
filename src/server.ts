@@ -76,10 +76,10 @@ export class MCPServer {
         if (this.fileListingCallback) {
             logger.info(`Setting up MCP tools with configuration: ${JSON.stringify(this.toolConfig)}`);
             if(this.toolConfig.command) {
-                logger.info('Command execution tools are enabled');
                 registerCommandTools(this.server);
+                logger.info('MCP command tools registered successfully');
             } else {
-                logger.info('Command execution tools are disabled');
+                logger.info('MCP command tools disabled by configuration');
             }
             // Register file tools if enabled
             if (this.toolConfig.file) {

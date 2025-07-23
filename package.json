@@ -36,6 +36,7 @@
         "vscode-mcp-server.enabledTools": {
           "type": "object",
           "default": {
+            "command": true,
             "file": true,
             "edit": true,
             "shell": true,
