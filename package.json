@@ -23,7 +23,7 @@
       "properties": {
         "vscode-mcp-server.port": {
           "type": "number",
-          "default": 3000,
+          "default": 8345,
           "minimum": 1024,
           "maximum": 65535,
           "description": "The port number for the MCP server"

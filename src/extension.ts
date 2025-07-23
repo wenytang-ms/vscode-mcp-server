@@ -155,7 +155,7 @@ export async function activate(context: vscode.ExtensionContext) {
         // Get configuration
         const config = vscode.workspace.getConfiguration('vscode-mcp-server');
         const defaultEnabled = config.get<boolean>('defaultEnabled') ?? false;
-        const port = config.get<number>('port') || 3000;
+        const port = config.get<number>('port') || 8345;
 
         // Load saved state or use configured default
         serverEnabled = context.globalState.get('mcpServerEnabled', defaultEnabled);
@@ -229,7 +229,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     
                     // Start new server with updated configuration
                     const config = vscode.workspace.getConfiguration('vscode-mcp-server');
-                    const port = config.get<number>('port') || 3000;
+                    const port = config.get<number>('port') || 8345;
                     const terminal = getExtensionTerminal(context);
                     const toolConfig = getToolConfiguration();
                     

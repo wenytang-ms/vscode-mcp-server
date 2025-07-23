@@ -34,7 +34,7 @@ export class MCPServer {
         this.fileListingCallback = callback;
     }
 
-    constructor(port: number = 3000, terminal?: vscode.Terminal, toolConfig?: ToolConfiguration) {
+    constructor(port: number = 8345, terminal?: vscode.Terminal, toolConfig?: ToolConfiguration) {
         this.port = port;
         this.terminal = terminal;
         this.toolConfig = toolConfig || {
