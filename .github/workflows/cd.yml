@@ -20,9 +20,8 @@ jobs:
 
       - name: build and pack
         run: |
-          npm i
-          npm run compile
-          npx vsce package --no-dependencies
+          npm install
+          npx vsce package
 
       - name: get package version
         id: package-version
